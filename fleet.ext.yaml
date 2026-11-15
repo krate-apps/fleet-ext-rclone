@@ -1,0 +1,23 @@
+schema: 1
+id: org.fleet.rclone
+name: Rclone
+description: Copy or move completed downloads to allowlisted rclone remotes.
+version: 1.0.0
+api: ">=1.0.0 <2.0.0"
+engines:
+  - rtorrent
+capabilities:
+  - storage.read
+  - storage.write
+  - torrents.read
+  - files.read
+  - files.write
+  - jobs.schedule
+  - jobs.read
+frontend:
+  type: declarative
+  entry: ui/extension.json
+backend:
+  type: process
+  executable: bin/rclone-worker
+  protocol: jsonrpc-2
