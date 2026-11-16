@@ -85,7 +85,7 @@
           "kind": "textarea",
           "required": true,
           "advanced": true,
-          "help": "Also editable with the visual builder above. action=copy|move remote=NAME dest={label}/{name} [label=…]",
+          "help": "Also editable with the visual builder below. action=copy|move remote=NAME dest={label}/{name} [label=…]",
           "rows": 10
         },
         {
