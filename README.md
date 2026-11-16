@@ -12,16 +12,58 @@
 </p>
 
 <p align="center">
+  <a href="#configuration">Configuration</a> ·
   <a href="#install">Install</a> ·
   <a href="https://github.com/krate-apps/fleet">Fleet</a> ·
   <a href="https://github.com/krate-apps/fleet-official-bucket">Official bucket</a> ·
   <a href="https://github.com/krate-apps/fleet-official-bucket/blob/main/extensions.md">All extensions</a> ·
   <a href="https://github.com/krate-apps/fleet/blob/main/docs/developer/create-extension.md">Create an extension</a>
+
 </p>
 
 ---
 
 <p align="center"><code>org.fleet.rclone</code> · official Fleet extension · SDK worker package</p>
+
+
+<!-- fleet-config:start -->
+## Configuration
+
+Turn this extension **on/off** with **Extensions → Activate / Deactivate**. There is no separate Enabled checkbox in settings; Apply only saves options. After a Fleet host upgrade, use **Reload workers** if RPC returns `extension worker not active`.
+
+### Parameters
+
+#### Rclone — remotes and rules
+
+Copy finished torrents to an rclone remote. Build transfer rules visually (or Expert).
+
+| Parameter | Type | Required | Notes |
+| --- | --- | --- | --- |
+| Poll interval (seconds) (`intervalSec`) | number | yes | How often the worker wakes up. Placeholder: `60` Advanced (under More options). |
+| rclone binary override (empty = tools.rclone / PATH) (`rcloneBin`) | text | no | — |
+| Resolved rclone path (hint after save) (`rcloneResolved`) | text | no | Advanced (under More options). |
+| Allowlisted remotes (`remotesAllowText`) | textarea | yes | One remote name per line. Advanced (under More options). |
+| Transfer rules (key=value — Expert) (`rulesText`) | textarea | yes | Also editable with the visual builder below. action=copy\|move remote=NAME dest={label}/{name} [label=…] Advanced (under More options). |
+| After copy: rclone check then delete local (default off) (`deleteLocalAfterVerify`) | boolean | no | Advanced (under More options). |
+
+#### Cancel transfer
+
+Adjust Cancel transfer — essentials first, extras under More options.
+
+| Parameter | Type | Required | Notes |
+| --- | --- | --- | --- |
+| Job id (`cancelJobId`) | text | yes | From List running transfers. |
+
+### Actions
+
+| Action | Notes |
+| --- | --- |
+| Scan completions now | Primary; Target: `global` |
+| List running transfers | Target: `global` |
+| Show journal | Target: `global` |
+| Clear journal | Destructive; Target: `global` |
+
+<!-- fleet-config:end -->
 
 ## Install
 
