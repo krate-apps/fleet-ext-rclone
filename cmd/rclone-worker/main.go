@@ -180,9 +180,90 @@ func handleRequest(req request) {
 		killJob(id)
 		_, _ = hostCall("fleet.jobs.cancel", map[string]any{"id": id})
 		reply(req.ID, map[string]any{"ok": true, "id": id})
+	case "ext.rclone.listDrives":
+		res, err := listDrives()
+		if err != nil {
+			replyErr(req.ID, err.Error())
+			return
+		}
+		reply(req.ID, res)
 	default:
 		replyErr(req.ID, fmt.Sprintf("method not found: %s", req.Method))
 	}
+}
+
+// listDrives returns rclone remotes (allowlist-filtered) with optional local
+// FUSE path under $HOME/mounts/<name> when that directory exists.
+func listDrives() (map[string]any, error) {
+	st, err := loadSettings()
+	if err != nil {
+		return nil, err
+	}
+	bin, err := resolveRclone(st.RcloneBin)
+	if err != nil {
+		return nil, err
+	}
+	cmd := exec.Command(bin, "listremotes")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("rclone listremotes: %w", err)
+	}
+	home, _ := os.UserHomeDir()
+	roots, _ := loadRoots()
+	rootSet := map[string]struct{}{}
+	for _, r := range roots {
+		rootSet[filepath.Clean(r)] = struct{}{}
+	}
+	type drive struct {
+		ID         string `json:"id"`
+		Name       string `json:"name"`
+		Remote     string `json:"remote"`
+		Path       string `json:"path,omitempty"`
+		Browsable  bool   `json:"browsable"`
+	}
+	var drives []drive
+	for _, line := range strings.Split(string(out), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		name := strings.TrimSuffix(line, ":")
+		if name == "" {
+			continue
+		}
+		if len(st.RemotesAllow) > 0 && !remoteAllowed(st.RemotesAllow, name) {
+			continue
+		}
+		d := drive{
+			ID:     strings.ToLower(name),
+			Name:   name,
+			Remote: name + ":",
+		}
+		if home != "" {
+			cand := filepath.Join(home, "mounts", name)
+			if fi, err := os.Stat(cand); err == nil && fi.IsDir() {
+				d.Path = cand
+				clean := filepath.Clean(cand)
+				_, d.Browsable = rootSet[clean]
+				// Also browsable if cand is under a download_root, or a root lives under cand.
+				if !d.Browsable {
+					for r := range rootSet {
+						if r == clean || strings.HasPrefix(clean, r+string(os.PathSeparator)) {
+							d.Browsable = true
+							break
+						}
+						if strings.HasPrefix(r, clean+string(os.PathSeparator)) {
+							d.Path = r
+							d.Browsable = true
+							break
+						}
+					}
+				}
+			}
+		}
+		drives = append(drives, d)
+	}
+	return map[string]any{"drives": drives}, nil
 }
 
 func handleSave(id any, params json.RawMessage) {
